@@ -1,0 +1,23 @@
+# FastApi
+fastapi
+pydantic
+uvicorn
+uvicorn-worker
+uvicorn[standard]
+gunicorn
+
+# Security
+python-jose[cryptography]
+passlib[bcrypt]
+
+# Database
+sqlalchemy
+sqlalchemy[asyncio]
+asyncpg
+alembic
+
+# Other
+python-dotenv
+
+#Formatters
+black

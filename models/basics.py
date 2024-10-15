@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey
 
 from .base import BaseModel
 
@@ -14,12 +15,22 @@ class User(BaseModel):
         index=True,
         comment="Имя пользователя",
     )
+    permission: Mapped[int] = mapped_column(comment="Права пользователя")
     password_hash: Mapped[str] = mapped_column(
         comment="Хеш пароля",
     )
 
-    is_admin: Mapped[bool] = mapped_column(
-        default=False,
-        comment="Администратор",
+
+class Counterparty(BaseModel):
+    __tablename__ = "counterparties"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        comment="ID контрагента",
     )
 
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+    )
+
+    user: Mapped["User"] = relationship()

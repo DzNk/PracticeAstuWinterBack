@@ -5,19 +5,28 @@ from .base import ApiModel
 
 @unique
 class Permission(IntEnum):
-    MANAGE_DOCUMENTATION = 1 << 0
+    MANAGE_USERS = 1 << 0
+    MANAGE_PRODUCTS = 1 << 1
+    SELL_PRODUCTS = 1 << 2
 
 
 class TokenDataSchema(ApiModel):
-    permissions: int
+    permission: int
     iat: int
 
 
-class TelegramData(ApiModel):
-    id: int
-    first_name: str
-    auth_date: int
-    hash: str
-    last_name: str | None = None
-    photo_url: str | None = None
-    username: str | None = None
+class UserLogin(ApiModel):
+    username: str
+    password: str
+
+
+class UserCreateRequest(ApiModel):
+    username: str
+    password: str
+    permission: int
+
+
+class LoginResponse(ApiModel):
+    permission: int
+    name: str
+    ok: bool = False

@@ -29,3 +29,13 @@ class ApiModel(BaseModel):
 class OkResponseSchema(ApiModel):
     ok: bool
     message: str = ""
+
+
+class PaginationRequest(ApiModel):
+    page: int
+    per_page: int
+
+
+class PaginationResponse(ApiModel):
+    total: int
+    pages: int

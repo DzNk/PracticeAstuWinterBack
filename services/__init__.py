@@ -1,2 +1,2 @@
-from .documentation import DocumentationService
 from .security import SecurityService
+from .products import ProductsService

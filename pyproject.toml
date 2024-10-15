@@ -6,10 +6,3 @@ target-version = ['py312']
 line-length = 120
 indent-width = 4
 target-version = "py312"
-
-[tool.ruff.lint]
-select = [
-    "B", "SIM", "F", "E", "N", "UP", "ANN",
-    "ASYNC", "S", "A", "C4", "PIE", "PTH",
-    "ERA", "PL", "FLY", "FAST"
-]

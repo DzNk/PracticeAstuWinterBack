@@ -10,19 +10,7 @@ from services.base import BaseService
 
 
 class ProductsService(BaseService):
-    @staticmethod
-    def apply_pagination(stmt, pagination: products_schemas.PaginationRequest):
-        return stmt.offset((pagination.page - 1) * pagination.per_page).limit(pagination.per_page)
 
-    async def get_pagination_info(self, stmt) -> base_schemas.PaginationResponse:
-        count_stmt = select(
-            func.count(),
-        ).select_from(stmt.subquery())
-
-        result = await self.session.execute(count_stmt)
-        total: int = result.scalar()
-
-        return base_schemas.PaginationResponse(row_count=total)
 
     @staticmethod
     def apply_keyword_filter(stmt, keyword: str):

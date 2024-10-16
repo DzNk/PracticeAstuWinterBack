@@ -3,7 +3,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.session import session_factory
-from schemas.security import UserCreateRequest, Permission
+from schemas.security import UserDataRequest, Permission
 from services import SecurityService
 
 
@@ -11,7 +11,7 @@ async def main():
     session: AsyncSession = session_factory()
     service = SecurityService(session)
     await service.create_user(
-        user=UserCreateRequest(
+        user=UserDataRequest(
             username="admin",
             password="valera337",
             permission=Permission.MANAGE_PRODUCTS | Permission.MANAGE_USERS | Permission.SELL_PRODUCTS,

@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import reduce
 from time import time
 
@@ -11,6 +11,7 @@ from passlib.context import CryptContext
 import models
 import schemas.security as security_schemas
 from backend.config import SECRET_KEY, SECURITY_ALGORITHM
+from schemas.base import OkResponseSchema
 from services.base import BaseService
 from sqlalchemy import select
 
@@ -80,27 +81,6 @@ class SecurityService(BaseService):
             ok=True,
         )
 
-    async def create_user(self, user: security_schemas.UserCreateRequest) -> security_schemas.LoginResponse:
-        stmt = select(models.User).where(models.User.username == user.username)
-        result = await self.session.execute(stmt)
-        db_user = result.scalar_one_or_none()
-        if db_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User already exists",
-            )
-
-        pwd_context = CryptContext(schemes=["bcrypt"])
-        password_hash = pwd_context.hash(user.password)
-        new_user = models.User(username=user.username, password_hash=password_hash, permission=user.permission)
-        self.session.add(new_user)
-        await self.session.commit()
-
-        return security_schemas.LoginResponse(
-            permission=new_user.permission,
-            name=new_user.username,
-        )
-
     @staticmethod
     def authenticate(required_permissions: list[security_schemas.Permission]) -> Callable:
         def _authenticate(request: Request) -> None:
@@ -113,3 +93,80 @@ class SecurityService(BaseService):
             SecurityService.verify_jwt(token, required_permissions)
 
         return _authenticate
+
+    async def create_user(self, user: security_schemas.UserDataRequest) -> OkResponseSchema:
+        stmt = select(models.User).where(models.User.username == user.username)
+        result = await self.session.execute(stmt)
+        db_user = result.scalar_one_or_none()
+        if db_user:
+            OkResponseSchema(
+                ok=False,
+                message="Пользователь с таким именем уже существует",
+            )
+
+        pwd_context = CryptContext(schemes=["bcrypt"])
+        password_hash = pwd_context.hash(user.password)
+        new_user = models.User(username=user.username, password_hash=password_hash, permission=user.permission)
+        self.session.add(new_user)
+        await self.session.commit()
+
+        return OkResponseSchema(
+            ok=True,
+            message="",
+        )
+
+    @staticmethod
+    def apply_keyword_filter(stmt, keyword: str):
+        if keyword:
+            stmt = stmt.where(models.User.username.ilike(f"%{keyword}%"))
+        return stmt
+
+    @staticmethod
+    def apply_permission_filter(stmt, permission: int | None):
+        if permission:
+            stmt = stmt.where(models.User.permission == permission)
+        return stmt
+
+    async def list_users(self, user_list_filter: security_schemas.UserListFilter) -> security_schemas.UserList:
+        stmt = select(models.User).order_by(models.User.id.desc())
+        stmt = self.apply_keyword_filter(stmt, user_list_filter.keyword)
+        stmt = self.apply_permission_filter(stmt, user_list_filter.permission)
+
+        pagination_info = await self.get_pagination_info(stmt)
+        stmt = self.apply_pagination(stmt, user_list_filter.pagination)
+
+        result = await self.session.execute(stmt)
+        rows: Sequence[models.User] = result.scalars().all()
+        items = []
+
+        for row in rows:
+            items.append(
+                security_schemas.UserDataRequest(
+                    username=row.username,
+                    password="",
+                    permission=row.permission,
+                )
+            )
+
+        return security_schemas.UserList(
+            users=items,
+            pagination_info=pagination_info,
+        )
+
+    async def edit_user(self, user: security_schemas.UserDataRequest) -> OkResponseSchema:
+        stmt = select(models.User).where(models.User.username == user.username)
+        result = await self.session.execute(stmt)
+        db_user = result.scalar_one_or_none()
+        if not db_user:
+            return OkResponseSchema(
+                ok=False,
+                message="Пользователь не найден",
+            )
+
+        db_user.permission = user.permission
+        await self.session.commit()
+
+        return OkResponseSchema(
+            ok=True,
+            message="",
+        )

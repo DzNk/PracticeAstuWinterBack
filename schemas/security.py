@@ -1,6 +1,6 @@
 from enum import IntEnum, unique
 
-from .base import ApiModel
+from .base import ApiModel, PaginationResponse, PaginationRequest
 
 
 @unique
@@ -20,7 +20,7 @@ class UserLogin(ApiModel):
     password: str
 
 
-class UserCreateRequest(ApiModel):
+class UserDataRequest(ApiModel):
     username: str
     password: str
     permission: int
@@ -30,3 +30,14 @@ class LoginResponse(ApiModel):
     permission: int
     name: str
     ok: bool = False
+
+
+class UserListFilter(ApiModel):
+    keyword: str = ""
+    permission: int | None = None
+    pagination: PaginationRequest
+
+
+class UserList(ApiModel):
+    users: list[UserDataRequest]
+    pagination_info: PaginationResponse

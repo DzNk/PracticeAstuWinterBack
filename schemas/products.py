@@ -62,3 +62,24 @@ class FinishProductRequest(ApiModel):
 
 class DownloadProductOrderRequest(ApiModel):
     id: int
+
+
+class SalesRequestFilter(ApiModel):
+    keyword: str = ""
+    pagination: PaginationRequest
+
+
+class SalesItem(ApiModel):
+    id: int
+    product_name: str
+    price: float
+    quantity: int
+    income: float
+
+
+class SalesUserResponse(ApiModel):
+    items: list[SalesItem]
+
+
+class CreateProductOrderRequest(ApiModel):
+    ids: list[int]

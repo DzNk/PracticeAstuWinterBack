@@ -86,6 +86,7 @@ class ProductOrder(BaseModel):
 
     finished: Mapped[bool] = mapped_column(
         index=True,
+        default=False,
         comment="Завершен ли ордер",
     )
 

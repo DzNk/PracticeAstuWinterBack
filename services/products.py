@@ -258,3 +258,70 @@ class ProductsService(BaseService):
             file_type="application/pdf",
             file_name=random_filename,
         )
+
+    @staticmethod
+    def apply_sales_keyword_filter(stmt, keyword):
+        if keyword:
+            stmt = stmt.where(
+                or_(
+                    models.Product.article.ilike(f"%{keyword}%"),
+                    models.Product.name.ilike(f"%{keyword}%"),
+                )
+            )
+        return stmt
+
+    @staticmethod
+    def apply_sales_user_id_filter(stmt, request: Request):
+        user_id = SecurityService.get_user_id(request)
+        stmt = stmt.where(models.SalesRequests.user_id == user_id)
+        return stmt
+
+    async def get_sales_requests(self, request: Request) -> products_schemas.SalesUserResponse:
+        stmt = (
+            select(models.SalesRequests)
+            .order_by(models.SalesRequests.id.desc())
+            .where(models.SalesRequests.product_order_id == None)
+        )
+        stmt = stmt.options(joinedload(models.SalesRequests.product))
+        stmt = self.apply_sales_user_id_filter(stmt, request)
+
+        result = await self.session.execute(stmt)
+        rows: Sequence[models.SalesRequests] = result.scalars().all()
+        products: list[products_schemas.SalesItem] = []
+        for row in rows:
+            products.append(
+                products_schemas.SalesItem(
+                    id=row.id,
+                    income=row.income,
+                    product_name=row.product.name,
+                    quantity=row.quantity,
+                    price=row.price,
+                )
+            )
+
+        return products_schemas.SalesUserResponse(items=products)
+
+    async def create_product_order(
+        self,
+        create_request: products_schemas.CreateProductOrderRequest,
+        request: Request,
+    ) -> OkResponseSchema:
+        stmt = select(models.SalesRequests).where(models.SalesRequests.id.in_(create_request.ids))
+        result = await self.session.execute(stmt)
+        sales_requests: Sequence[models.SalesRequests] = result.scalars().all()
+
+        if not sales_requests:
+            return OkResponseSchema(ok=False, message="Запросы на продажу не найдены")
+
+        user_id = SecurityService.get_user_id(request)
+
+        new_order = models.ProductOrder(user_id=user_id)
+        self.session.add(new_order)
+        await self.session.commit()
+
+        for create_request in sales_requests:
+            create_request.product_order_id = new_order.id
+
+        await self.session.commit()
+
+        return OkResponseSchema(ok=True)

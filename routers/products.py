@@ -11,6 +11,8 @@ from schemas.products import (
     ProductOrderResponse,
     FinishProductRequest,
     DownloadProductOrderRequest,
+    SalesUserResponse,
+    CreateProductOrderRequest,
 )
 from schemas.security import Permission
 from services import SecurityService, ProductsService
@@ -171,3 +173,43 @@ async def list_product_orders(
 async def get_order_pdf(session: SessionDependency, request: DownloadProductOrderRequest) -> FileResponse:
     service = ProductsService(session)
     return await service.get_order_pdf(request.id)
+
+
+@products_router.post(
+    "/sales-list",
+    operation_id="get_sales_list",
+    dependencies=[
+        Depends(
+            SecurityService.authenticate(
+                [
+                    Permission.SELL_PRODUCTS,
+                ]
+            )
+        )
+    ],
+    response_model=SalesUserResponse,
+)
+async def get_order_pdf(session: SessionDependency, request: Request) -> SalesUserResponse:
+    service = ProductsService(session)
+    return await service.get_sales_requests(request)
+
+
+@products_router.post(
+    "/create-order",
+    operation_id="create_order",
+    dependencies=[
+        Depends(
+            SecurityService.authenticate(
+                [
+                    Permission.SELL_PRODUCTS,
+                ]
+            )
+        )
+    ],
+    response_model=OkResponseSchema,
+)
+async def create_order(
+    session: SessionDependency, create_request: CreateProductOrderRequest, request: Request
+) -> OkResponseSchema:
+    service = ProductsService(session)
+    return await service.create_product_order(create_request, request)

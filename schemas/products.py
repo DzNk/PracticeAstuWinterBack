@@ -18,3 +18,11 @@ class ProductList(ApiModel):
 class ProductListFilter(ApiModel):
     keyword: str = ""
     pagination: PaginationRequest
+
+
+class ProductEditRequest(ApiModel):
+    name: str
+    description: str
+    price: float
+    article: str
+    quantity: int

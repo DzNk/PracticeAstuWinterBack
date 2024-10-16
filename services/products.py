@@ -3,9 +3,10 @@ from collections.abc import Sequence
 from sqlalchemy import select, func, Integer, or_
 
 import models
-from services.base import BaseService
-import schemas.products as products_schemas
 import schemas.base as base_schemas
+import schemas.products as products_schemas
+from schemas.base import OkResponseSchema
+from services.base import BaseService
 
 
 class ProductsService(BaseService):
@@ -66,3 +67,44 @@ class ProductsService(BaseService):
             products=products,
             pagination_info=pagination_info,
         )
+
+    async def create_product(self, product: products_schemas.ProductEditRequest) -> OkResponseSchema:
+        stmt = select(models.Product).where(models.Product.article == product.article)
+        result = await self.session.execute(stmt)
+        existing_product = result.scalars().first()
+
+        if existing_product:
+            return OkResponseSchema(ok=False, message="Товар с таким артикулом уже существует")
+
+        new_product = models.Product(
+            name=product.name,
+            article=product.article,
+            description=product.description,
+            price=product.price,
+            quantity=product.quantity,
+        )
+        self.session.add(new_product)
+        await self.session.commit()
+
+        return OkResponseSchema(
+            ok=True,
+        )
+
+    async def edit_product(self, product: products_schemas.ProductEditRequest) -> OkResponseSchema:
+        stmt = select(models.Product).where(models.Product.article == product.article)
+        result = await self.session.execute(stmt)
+        existing_product = result.scalars().first()
+
+        if not existing_product:
+            return OkResponseSchema(ok=False, message="Товар с таким артикулом не найден")
+
+        existing_product.name = product.name
+        existing_product.description = product.description
+        existing_product.price = product.price
+        existing_product.quantity = product.quantity
+        await self.session.commit()
+
+        return OkResponseSchema(
+            ok=True,
+        )
+

@@ -207,23 +207,37 @@ class ProductsService(BaseService):
         result = await self.session.execute(stmt)
         order: models.ProductOrder = result.scalars().first()
 
-        products = []
+        product_summary = {}
         final_product_price = 0
         final_income = 0
+
         for request in order.requests:
             product: models.Product = request.product
-            products.append(
-                {
+            if product.article not in product_summary:
+                product_summary[product.article] = {
                     "name": product.name,
                     "article": product.article,
-                    "quantity": request.quantity,
-                    "price": f"{request.price:.2f}" if request.price % 1 != 0 else f"{request.price:.0f}",
-                    "income": f"{request.income:.2f}" if request.income % 1 != 0 else f"{request.income:.0f}",
+                    "quantity": 0,
+                    "price": 0,
+                    "income": 0,
                 }
-            )
+            product_summary[product.article]["quantity"] += request.quantity
+            product_summary[product.article]["price"] += request.price * request.quantity
+            product_summary[product.article]["income"] += request.income * request.quantity
 
             final_product_price += request.price * request.quantity
             final_income += request.income * request.quantity
+
+        products = [
+            {
+                "name": item["name"],
+                "article": item["article"],
+                "quantity": item["quantity"],
+                "price": f"{item['price']:.2f}" if item["price"] % 1 != 0 else f"{item['price']:.0f}",
+                "income": f"{item['income']:.2f}" if item["income"] % 1 != 0 else f"{item['income']:.0f}",
+            }
+            for item in product_summary.values()
+        ]
 
         final_html = TEMPLATES.get_template("product_order.html").render(
             date_from=order.realization_date.strftime("%d.%m.%Y"),

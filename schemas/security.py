@@ -13,6 +13,7 @@ class Permission(IntEnum):
 class TokenDataSchema(ApiModel):
     permission: int
     iat: int
+    user_id: int
 
 
 class UserLogin(ApiModel):
@@ -24,6 +25,15 @@ class UserDataRequest(ApiModel):
     username: str
     password: str
     permission: int
+
+
+class Employee(ApiModel):
+    username: str
+    id: int
+
+
+class EmployeeList(ApiModel):
+    employees: list[Employee]
 
 
 class LoginResponse(ApiModel):

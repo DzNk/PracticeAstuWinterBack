@@ -51,11 +51,19 @@ class SalesRequests(BaseModel):
     )
 
     product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id"),
         comment="ID товара",
     )
 
+    product: Mapped[Product] = relationship()
+
     price: Mapped[float] = mapped_column(
         comment="Цена продажи",
+    )
+
+    income: Mapped[float] = mapped_column(
+        comment="Доход за продажу",
+        server_default="0",
     )
 
     quantity: Mapped[int] = mapped_column(
@@ -82,5 +90,9 @@ class ProductOrder(BaseModel):
     )
 
     requests: Mapped[list[SalesRequests]] = relationship()
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        comment="ID пользователя",
+    )
 
     realization_date: Mapped[datetime] = mapped_column(comment="Дата реализации", default=datetime.now())

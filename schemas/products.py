@@ -1,3 +1,4 @@
+from datetime import datetime
 from schemas.base import ApiModel, PaginationResponse, PaginationRequest
 
 
@@ -26,3 +27,38 @@ class ProductEditRequest(ApiModel):
     price: float
     article: str
     quantity: int
+
+
+class SalesRequest(ApiModel):
+    article: str
+    quantity: int
+    price: float
+    user_id: int
+    income: float
+
+
+class ProductOrdersRequest(ApiModel):
+    keyword: str = ""
+    pagination: PaginationRequest
+
+
+class ProductOrderItem(ApiModel):
+    id: int
+    date: datetime
+    username: str
+    income: float
+    price: float
+    finished: bool
+
+
+class ProductOrderResponse(ApiModel):
+    items: list[ProductOrderItem]
+    pagination_info: PaginationResponse
+
+
+class FinishProductRequest(ApiModel):
+    id: int
+
+
+class DownloadProductOrderRequest(ApiModel):
+    id: int

@@ -12,23 +12,25 @@ import models
 import schemas.security as security_schemas
 from backend.config import SECRET_KEY, SECURITY_ALGORITHM
 from schemas.base import OkResponseSchema
+from schemas.security import Permission
 from services.base import BaseService
 from sqlalchemy import select
 
 
 class SecurityService(BaseService):
     @staticmethod
-    def generate_jwt(permission: int) -> str:
+    def generate_jwt(permission: int, user_id: int) -> str:
         to_encode = security_schemas.TokenDataSchema(
             permission=permission,
             iat=int(time()),
+            user_id=user_id,
         ).serialize()
         token = jwt.encode(to_encode, SECRET_KEY, algorithm=SECURITY_ALGORITHM)
         return token
 
     @staticmethod
-    async def set_jwt(permission: int, response: Response) -> None:
-        token = SecurityService.generate_jwt(permission)
+    async def set_jwt(permission: int, user_id: int, response: Response) -> None:
+        token = SecurityService.generate_jwt(permission, user_id)
         response.set_cookie(key="access_token", value=token, httponly=False, secure=False, samesite="lax")
 
     @staticmethod
@@ -73,7 +75,7 @@ class SecurityService(BaseService):
                 detail="Incorrect password",
             )
 
-        await self.set_jwt(db_user.permission, response)
+        await self.set_jwt(db_user.permission, db_user.id, response)
 
         return security_schemas.LoginResponse(
             permission=db_user.permission,
@@ -170,3 +172,31 @@ class SecurityService(BaseService):
             ok=True,
             message="",
         )
+
+    async def list_employees(self) -> security_schemas.EmployeeList:
+        stmt = select(models.User).where(models.User.permission == Permission.SELL_PRODUCTS)
+        result = await self.session.execute(stmt)
+        rows: Sequence[models.User] = result.scalars().all()
+        items = []
+
+        for row in rows:
+            items.append(
+                security_schemas.Employee(
+                    username=row.username,
+                    id=row.id,
+                )
+            )
+
+        return security_schemas.EmployeeList(employees=items)
+
+    @staticmethod
+    def get_user_id(request: Request):
+        token = request.cookies.get("access_token")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
+        return security_schemas.TokenDataSchema.deserialize(payload).user_id
+
+    @staticmethod
+    def is_admin(request: Request):
+        token = request.cookies.get("access_token")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
+        return security_schemas.TokenDataSchema.deserialize(payload).permission == 7

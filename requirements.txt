@@ -5,6 +5,7 @@ uvicorn
 uvicorn-worker
 uvicorn[standard]
 gunicorn
+jinja2
 
 # Security
 pyjwt
@@ -16,11 +17,11 @@ bcrypt==4.0.1
 sqlalchemy
 sqlalchemy[asyncio]
 asyncpg
-psycopg2
 alembic
 
 # Other
 python-dotenv
+weasyprint
 
 #Formatters
 black

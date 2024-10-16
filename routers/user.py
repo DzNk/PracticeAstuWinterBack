@@ -90,3 +90,23 @@ async def edit_user(
 ) -> OkResponseSchema:
     service = SecurityService(session)
     return await service.edit_user(user_data)
+
+@user_router.get(
+    "/employees",
+    dependencies=[
+        Depends(
+            SecurityService.authenticate(
+                [
+                    Permission.MANAGE_USERS,
+                ]
+            )
+        )
+    ],
+    response_model=security_schemas.EmployeeList,
+    operation_id="list_employees",
+)
+async def list_employees(
+    session: SessionDependency,
+) -> security_schemas.EmployeeList:
+    service = SecurityService(session)
+    return await service.list_employees()

@@ -1,8 +1,17 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from backend.dependecies import SessionDependency
-from schemas.base import OkResponseSchema
-from schemas.products import ProductListFilter, ProductList, ProductEditRequest
+from schemas.base import OkResponseSchema, FileResponse
+from schemas.products import (
+    ProductListFilter,
+    ProductList,
+    ProductEditRequest,
+    SalesRequest,
+    ProductOrdersRequest,
+    ProductOrderResponse,
+    FinishProductRequest,
+    DownloadProductOrderRequest,
+)
 from schemas.security import Permission
 from services import SecurityService, ProductsService
 
@@ -76,3 +85,89 @@ async def edit_product(
 ) -> OkResponseSchema:
     service = ProductsService(session)
     return await service.edit_product(product_edit_request)
+
+
+@products_router.post(
+    "/create-sales-request",
+    operation_id="create_sales_request",
+    dependencies=[
+        Depends(
+            SecurityService.authenticate(
+                [
+                    Permission.MANAGE_PRODUCTS,
+                ]
+            )
+        )
+    ],
+    response_model=OkResponseSchema,
+)
+async def create_sales_request(
+    sales_request: SalesRequest,
+    session: SessionDependency,
+) -> OkResponseSchema:
+    service = ProductsService(session)
+    return await service.create_sales_request(sales_request)
+
+
+@products_router.post(
+    "/list-product-orders",
+    operation_id="list_product_orders",
+    dependencies=[
+        Depends(
+            SecurityService.authenticate(
+                [
+                    Permission.SELL_PRODUCTS,
+                ]
+            )
+        )
+    ],
+    response_model=ProductOrderResponse,
+)
+async def list_product_orders(
+    session: SessionDependency,
+    orders_request: ProductOrdersRequest,
+    request: Request,
+) -> ProductOrderResponse:
+    service = ProductsService(session)
+    return await service.list_product_orders(orders_request, request)
+
+
+@products_router.post(
+    "/finish-order",
+    operation_id="finish_order",
+    dependencies=[
+        Depends(
+            SecurityService.authenticate(
+                [
+                    Permission.MANAGE_PRODUCTS,
+                ]
+            )
+        )
+    ],
+    response_model=OkResponseSchema,
+)
+async def list_product_orders(
+    session: SessionDependency,
+    finish_order_request: FinishProductRequest,
+) -> OkResponseSchema:
+    service = ProductsService(session)
+    return await service.finish_order(finish_order_request.id)
+
+
+@products_router.post(
+    "/get-order-pdf",
+    operation_id="get-order-pdf",
+    dependencies=[
+        Depends(
+            SecurityService.authenticate(
+                [
+                    Permission.SELL_PRODUCTS,
+                ]
+            )
+        )
+    ],
+    response_model=FileResponse,
+)
+async def get_order_pdf(session: SessionDependency, request: DownloadProductOrderRequest) -> FileResponse:
+    service = ProductsService(session)
+    return await service.get_order_pdf(request.id)

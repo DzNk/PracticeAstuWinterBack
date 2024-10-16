@@ -38,3 +38,9 @@ class PaginationRequest(ApiModel):
 
 class PaginationResponse(ApiModel):
     row_count: int
+
+
+class FileResponse(ApiModel):
+    file: str
+    file_name: str
+    file_type: str

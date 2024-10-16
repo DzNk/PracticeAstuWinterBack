@@ -19,3 +19,4 @@ app.add_middleware(
 
 app.include_router(routers.user_router)
 app.include_router(routers.products_router)
+

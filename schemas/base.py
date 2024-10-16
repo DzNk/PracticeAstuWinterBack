@@ -37,5 +37,4 @@ class PaginationRequest(ApiModel):
 
 
 class PaginationResponse(ApiModel):
-    total: int
-    pages: int
+    row_count: int

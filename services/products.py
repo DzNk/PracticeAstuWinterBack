@@ -12,21 +12,17 @@ from services.base import BaseService
 class ProductsService(BaseService):
     @staticmethod
     def apply_pagination(stmt, pagination: products_schemas.PaginationRequest):
-        return stmt.offset(pagination.page - 1).limit(pagination.per_page)
+        return stmt.offset((pagination.page - 1) * pagination.per_page).limit(pagination.per_page)
 
-    async def get_pagination_info(self, stmt, per_page: int) -> base_schemas.PaginationResponse:
+    async def get_pagination_info(self, stmt) -> base_schemas.PaginationResponse:
         count_stmt = select(
-            func.cast(func.ceil(func.count() / per_page), Integer),
             func.count(),
         ).select_from(stmt.subquery())
 
         result = await self.session.execute(count_stmt)
-        pages, total = result.first()
+        total: int = result.scalar()
 
-        return base_schemas.PaginationResponse(
-            pages=pages,
-            total=total,
-        )
+        return base_schemas.PaginationResponse(row_count=total)
 
     @staticmethod
     def apply_keyword_filter(stmt, keyword: str):
@@ -45,7 +41,7 @@ class ProductsService(BaseService):
         stmt = select(models.Product).order_by(models.Product.id.desc())
         stmt = self.apply_keyword_filter(stmt, products_list_filter.keyword)
 
-        pagination_info = await self.get_pagination_info(stmt, products_list_filter.pagination.per_page)
+        pagination_info = await self.get_pagination_info(stmt)
         stmt = self.apply_pagination(stmt, products_list_filter.pagination)
 
         result = await self.session.execute(stmt)
@@ -107,4 +103,3 @@ class ProductsService(BaseService):
         return OkResponseSchema(
             ok=True,
         )
-

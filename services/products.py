@@ -222,8 +222,8 @@ class ProductsService(BaseService):
                     "income": 0,
                 }
             product_summary[product.article]["quantity"] += request.quantity
-            product_summary[product.article]["price"] += request.price * request.quantity
-            product_summary[product.article]["income"] += request.income * request.quantity
+            product_summary[product.article]["price"] += request.price
+            product_summary[product.article]["income"] += request.income
 
             final_product_price += request.price * request.quantity
             final_income += request.income * request.quantity
